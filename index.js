@@ -51,8 +51,12 @@ server.delete('/users/:id', (req, res) => {
     const id = req.params.id;
 
     db.remove(id)
-        .then(user => { 
-            res.status(200).json(user)
+        .then(user => {
+            if (user === 0) {
+                res.status(404).json({ message: "The user with the specified ID does not exist." })
+            } else { 
+                res.status(200).json(user)
+            }
         })
         .catch(err => {
             console.log("Failed to remove user", err)
@@ -65,16 +69,19 @@ server.put("/users/:id", (req, res) => {
     const newUser = req.body;
     const id = req.params.id;
 
-    const users = db.find().then(usersData => usersData).catch(err => console.log(err))
-
-    console.log(users)
-
     db.update(id, newUser)
-        .then(updatedUser => {
-            if (!newUser.name || !newUser.bio) {
+        .then(user => {
+            if (user === 0) {
+                res.status(404).json({ message: "The user with the specified ID does not exist." })
+            } else if (!newUser.name || !newUser.bio) {
                 res.status(400).json({ errorMessage: "Please provide name and bio for the user." })
             } else {
-                res.status(200).json(newUser)
+                db.findById(id)
+                    .then(user => res.status(200).json(user))
+                    .catch(err => {
+                        console.log("Can not find updated user", err)
+                        res.status(500).json({ error: "Could not find user"})
+                    })
             }
         })
         .catch(err => {
