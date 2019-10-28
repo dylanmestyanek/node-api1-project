@@ -33,18 +33,55 @@ server.get('/users/:id', (req, res) => {
 // POST request for adding a user
 server.post('/users', (req, res) => {
     const newUser = req.body;
-    if (!Object.keys(newUser).includes("name") || !Object.keys(newUser).includes("bio")){
-        return res.status(400).json({ errorMessage: "Please provide name and bio for the user." })
-    }
-    
+
     db.insert(newUser)
-        .then(data => res.status(201).json(newUser))
+        .then(data => {
+            if (!newUser.name || !newUser.bio) {
+                res.status(400).json({ errorMessage: "Please provide name and bio for the user." })
+            } else res.status(201).json(newUser)
+        })
         .catch(err => {
             console.log("Failed to add new user", err)
             res.status(500).json({ error: "There was an error while saving the user to the database."})
         })
 })
 
+// DELETE request for removing a user 
+server.delete('/users/:id', (req, res) => {
+    const id = req.params.id;
+
+    db.remove(id)
+        .then(user => { 
+            res.status(200).json(user)
+        })
+        .catch(err => {
+            console.log("Failed to remove user", err)
+            res.status(500).json({ error: "The user could not be removed." })
+        })
+})
+
+// PUT request for editing a user's info
+server.put("/users/:id", (req, res) => {
+    const newUser = req.body;
+    const id = req.params.id;
+
+    const users = db.find().then(usersData => usersData).catch(err => console.log(err))
+
+    console.log(users)
+
+    db.update(id, newUser)
+        .then(updatedUser => {
+            if (!newUser.name || !newUser.bio) {
+                res.status(400).json({ errorMessage: "Please provide name and bio for the user." })
+            } else {
+                res.status(200).json(newUser)
+            }
+        })
+        .catch(err => {
+            console.log("Updating User FAILED", err);
+            res.status(500).json({ error: "The user information could not be modified." })
+        })
+})
 
 const port = 5000;
 server.listen(port, (req, res) => console.log("\n Yo! Listening on port 5000 dude! :D \n"))
