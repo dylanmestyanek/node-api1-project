@@ -66,28 +66,24 @@ server.delete('/users/:id', (req, res) => {
 
 // PUT request for editing a user's info
 server.put("/users/:id", (req, res) => {
-    const newUser = req.body;
+    const updatedUser = req.body;
     const id = req.params.id;
 
-    db.update(id, newUser)
-        .then(user => {
-            if (user === 0) {
-                res.status(404).json({ message: "The user with the specified ID does not exist." })
-            } else if (!newUser.name || !newUser.bio) {
-                res.status(400).json({ errorMessage: "Please provide name and bio for the user." })
-            } else {
-                db.findById(id)
-                    .then(user => res.status(200).json(user))
-                    .catch(err => {
-                        console.log("Can not find updated user", err)
-                        res.status(500).json({ error: "Could not find user"})
-                    })
-            }
-        })
-        .catch(err => {
-            console.log("Updating User FAILED", err);
-            res.status(500).json({ error: "The user information could not be modified." })
-        })
+    if (!updatedUser.name || !updatedUser.bio) {
+        res.status(400).json({ errorMessage: "Please provide name and bio for the user." })
+    } else {
+        db.update(id, updatedUser)
+            .then(updated => {
+                if (updated) {
+                    db.findById(id)
+                        .then(user => res.status(200).json(user))
+                        .catch(err => res.status(500).json({ error: "Could not find user"}))
+                } else {
+                    res.status(404).json({ message: "The user with the specified ID does not exist." })
+                }
+            })
+            .catch(err => res.status(500).json({ error: "The user information could not be modified." }))
+    }
 })
 
 const port = 5000;
